@@ -1,0 +1,42 @@
+{
+    "general": {
+        "initial_equity": 100,
+        "margin_per_trade": 5,
+        "default_lot_size": 0.01,
+        "timezone": "UTC"
+    },
+    "sessions": {
+        "asia_start": "00:00",
+        "asia_end": "08:00",
+        "europe_start": "08:00",
+        "europe_end": "13:00",
+        "us_overlap_start": "13:00",
+        "us_overlap_end": "17:00",
+        "late_us_start": "17:00",
+        "late_us_end": "23:59"
+    },
+    "patterns": {
+        "enabled": [
+            "Original",
+            "L",
+            "LL",
+            "LLL",
+            "LLLL",
+            "LLLLL"
+        ]
+    },
+    "drawdown": {
+        "thresholds": [
+            10,
+            15,
+            20,
+            25,
+            30
+        ]
+    },
+    "reports": {
+        "output_directory": "output",
+        "create_charts": true,
+        "overwrite_existing": true
+    }
+}

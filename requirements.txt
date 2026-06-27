@@ -1,0 +1,26 @@
+# ============================================================================
+# MT5 Strategy Analyzer
+# Runtime Dependencies
+# ============================================================================
+
+# Data Processing
+pandas>=2.2.0
+numpy>=1.26.0
+
+# Excel Support
+openpyxl>=3.1.2
+
+# Date & Time
+python-dateutil>=2.9.0
+
+# Console Output
+rich>=13.7.0
+
+# Logging
+loguru>=0.7.2
+
+# Configuration Validation
+pydantic>=2.7.0
+
+# Progress Bars
+tqdm>=4.66.0

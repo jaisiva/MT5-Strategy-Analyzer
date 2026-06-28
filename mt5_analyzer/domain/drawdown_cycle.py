@@ -40,6 +40,10 @@ class DrawdownCycle:
 
     threshold: float
 
+    cycle_number: int
+    cycle_id: str
+    year: int
+    month: int    
     # ------------------------------------------------------------
     # Peak Information
     # ------------------------------------------------------------

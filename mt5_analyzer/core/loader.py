@@ -114,7 +114,7 @@ class MT5Loader:
         logger.info(
             "Report contains {} rows.",
             len(df),
-
+        )
         logger.info(
             "Excel columns: {}",
             df.columns.tolist(),

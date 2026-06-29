@@ -28,6 +28,14 @@ class TableBuilder:
     Generic Excel table writer.
     """
 
+    # --------------------------------------------------------------
+    # Workbook-wide unique table counter
+    # --------------------------------------------------------------
+
+    _table_counter = 1
+
+    # --------------------------------------------------------------
+
     def __init__(
         self,
         sheet: Worksheet,
@@ -71,17 +79,13 @@ class TableBuilder:
 
         title_cell.value = title
 
-        ExcelStyles.style_title(
-            title_cell
-        )
+        ExcelStyles.style_title(title_cell)
 
         # ----------------------------------------------------------
         # Headers
         # ----------------------------------------------------------
 
-        headers = list(
-            data[0].keys()
-        )
+        headers = list(data[0].keys())
 
         header_row = start_row + 1
 
@@ -97,9 +101,7 @@ class TableBuilder:
 
             cell.value = header
 
-            ExcelStyles.style_header(
-                cell
-            )
+            ExcelStyles.style_header(cell)
 
         # ----------------------------------------------------------
         # Data
@@ -114,9 +116,7 @@ class TableBuilder:
                 start=start_col,
             ):
 
-                value = record.get(
-                    header
-                )
+                value = record.get(header)
 
                 cell = self.sheet.cell(
                     row=current_row,
@@ -148,34 +148,39 @@ class TableBuilder:
                 column=start_col + len(headers) - 1,
             ).coordinate
 
+            # ------------------------------------------------------
+            # Generate workbook-wide unique table name
+            # ------------------------------------------------------
+
+            safe_sheet = (
+                self.sheet.title
+                .replace(" ", "_")
+                .replace("-", "_")
+            )
+
+            display_name = (
+                table_name
+                or f"{safe_sheet}_Table_{TableBuilder._table_counter}"
+            )
+
+            TableBuilder._table_counter += 1
+
             table = Table(
-
-                displayName=table_name
-                or f"Table_{header_row}",
-
+                displayName=display_name,
                 ref=f"{first}:{last}",
-
             )
 
             style = TableStyleInfo(
-
                 name="TableStyleMedium2",
-
                 showFirstColumn=False,
-
                 showLastColumn=False,
-
                 showRowStripes=True,
-
                 showColumnStripes=False,
-
             )
 
             table.tableStyleInfo = style
 
-            self.sheet.add_table(
-                table
-            )
+            self.sheet.add_table(table)
 
         return current_row
 
@@ -192,9 +197,7 @@ class TableBuilder:
 
         if value is None:
 
-            ExcelStyles.style_text(
-                cell
-            )
+            ExcelStyles.style_text(cell)
 
             return
 
@@ -203,9 +206,7 @@ class TableBuilder:
             bool,
         ):
 
-            ExcelStyles.style_text(
-                cell
-            )
+            ExcelStyles.style_text(cell)
 
             return
 
@@ -214,9 +215,7 @@ class TableBuilder:
             int,
         ):
 
-            ExcelStyles.style_integer(
-                cell
-            )
+            ExcelStyles.style_integer(cell)
 
             return
 
@@ -225,9 +224,7 @@ class TableBuilder:
             float,
         ):
 
-            ExcelStyles.style_decimal(
-                cell
-            )
+            ExcelStyles.style_decimal(cell)
 
             return
 
@@ -240,9 +237,7 @@ class TableBuilder:
                 datetime.datetime,
             ):
 
-                ExcelStyles.style_datetime(
-                    cell
-                )
+                ExcelStyles.style_datetime(cell)
 
                 return
 
@@ -251,9 +246,7 @@ class TableBuilder:
                 datetime.date,
             ):
 
-                ExcelStyles.style_date(
-                    cell
-                )
+                ExcelStyles.style_date(cell)
 
                 return
 
@@ -261,6 +254,4 @@ class TableBuilder:
 
             pass
 
-        ExcelStyles.style_text(
-            cell
-        )
+        ExcelStyles.style_text(cell)

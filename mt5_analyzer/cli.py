@@ -214,6 +214,12 @@ def run(argv: list[str] | None = None) -> int:
 
 # ---------------------------------------------------------------------
 
+def main() -> int:
+    """
+    Console entry point.
+    """
+
+    return run()
 
 if __name__ == "__main__":
 

@@ -64,12 +64,14 @@ class ColumnMapper:
 
         # Symbol
         "symbol": [
+            "symbol",
             "Symbol",
             "Instrument",
         ],
 
         # Side
         "side": [
+            "side",
             "Type",
             "Entry Type",
             "Direction",
@@ -79,6 +81,7 @@ class ColumnMapper:
 
         # Volume
         "volume": [
+            "volume",
             "Volume",
             "Lots",
             "Lot",
@@ -86,6 +89,7 @@ class ColumnMapper:
 
         # Profit
         "profit": [
+            "profit",
             "Profit",
             "P/L",
             "Net Profit",
@@ -103,6 +107,7 @@ class ColumnMapper:
 
         # Ticket
         "ticket": [
+            "ticket",
             "Ticket",
             "Trade No",
             "Order",

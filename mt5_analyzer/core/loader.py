@@ -53,11 +53,8 @@ class LoaderResult:
     """
 
     source_file: Path
-
     trades: list[Trade]
-
     validation: ValidationReport
-
     total_rows: int
 
 
@@ -71,68 +68,163 @@ class MT5Loader:
         ".xls",
     }
 
+    # --------------------------------------------------------------
+
     def load(
         self,
         filename: str | Path,
     ) -> LoaderResult:
         """
         Load MT5 report.
-
-        Parameters
-        ----------
-        filename
-            Excel report.
-
-        Returns
-        -------
-        LoaderResult
         """
 
         path = Path(filename)
 
-        logger.info(f"Loading MT5 report: {path}")
+        logger.info(
+            "Loading MT5 report: {}",
+            path,
+        )
 
         if not path.exists():
-            raise FileReadError(f"File not found: {path}")
+
+            raise FileReadError(
+                f"File not found: {path}"
+            )
 
         if path.suffix.lower() not in self.SUPPORTED_EXTENSIONS:
+
             raise UnsupportedFileFormatError(
                 f"Unsupported file type: {path.suffix}"
             )
+
+        # ----------------------------------------------------------
+        # Read Excel
+        # ----------------------------------------------------------
 
         try:
 
             df = pd.read_excel(path)
 
         except Exception as ex:
-            raise LoaderError(str(ex)) from ex
+
+            raise LoaderError(
+                str(ex)
+            ) from ex
 
         logger.info(
-            "Report contains %d rows.",
+            "Report contains {} rows.",
             len(df),
         )
 
-        # ------------------------------------------------------
+        # ----------------------------------------------------------
         # Normalize Columns
-        # ------------------------------------------------------
+        # ----------------------------------------------------------
 
         mapping = ColumnMapper.rename_mapping(
             df.columns.tolist()
         )
 
-        df = df.rename(columns=mapping)
+        df = df.rename(
+            columns=mapping
+        )
 
-        # ------------------------------------------------------
+        # ----------------------------------------------------------
         # Validate
-        # ------------------------------------------------------
+        # ----------------------------------------------------------
 
-        validation = Validator.validate(df)
+        validation = Validator.validate(
+            df
+        )
 
         if not validation.passed:
 
             logger.error(
                 "Validation failed."
             )
+
+            logger.error(
+                "{} error(s), {} warning(s)",
+                validation.error_count,
+                validation.warning_count,
+            )
+
+            # ----------------------------------------------
+            # Errors
+            # ----------------------------------------------
+
+            for error in validation.errors:
+
+                location = ""
+
+                if error.row is not None:
+
+                    location += (
+                        f"Row {error.row}"
+                    )
+
+                if error.column is not None:
+
+                    if location:
+
+                        location += ", "
+
+                    location += (
+                        f"Column '{error.column}'"
+                    )
+
+                if location:
+
+                    logger.error(
+                        "{} -> {}",
+                        location,
+                        error.message,
+                    )
+
+                else:
+
+                    logger.error(
+                        "{}",
+                        error.message,
+                    )
+
+            # ----------------------------------------------
+            # Warnings
+            # ----------------------------------------------
+
+            for warning in validation.warnings:
+
+                location = ""
+
+                if warning.row is not None:
+
+                    location += (
+                        f"Row {warning.row}"
+                    )
+
+                if warning.column is not None:
+
+                    if location:
+
+                        location += ", "
+
+                    location += (
+                        f"Column '{warning.column}'"
+                    )
+
+                if location:
+
+                    logger.warning(
+                        "{} -> {}",
+                        location,
+                        warning.message,
+                    )
+
+                else:
+
+                    logger.warning(
+                        "{}",
+                        warning.message,
+                    )
 
             return LoaderResult(
                 source_file=path,
@@ -141,9 +233,13 @@ class MT5Loader:
                 total_rows=len(df),
             )
 
-        # ------------------------------------------------------
+        logger.success(
+            "Validation passed."
+        )
+
+        # ----------------------------------------------------------
         # Create Trades
-        # ------------------------------------------------------
+        # ----------------------------------------------------------
 
         trades: list[Trade] = []
 
@@ -153,10 +249,12 @@ class MT5Loader:
                 row.to_dict()
             )
 
-            trades.append(trade)
+            trades.append(
+                trade
+            )
 
         logger.success(
-            "Loaded %d trades.",
+            "Loaded {} trades.",
             len(trades),
         )
 
@@ -166,6 +264,8 @@ class MT5Loader:
             validation=validation,
             total_rows=len(df),
         )
+
+    # --------------------------------------------------------------
 
     @staticmethod
     def supported_extensions() -> list[str]:

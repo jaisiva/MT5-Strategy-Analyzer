@@ -34,6 +34,7 @@ class ColumnMapper:
 
         # Entry Date
         "entry_date": [
+            "entry_date",
             "Entry Date",
             "Open Date",
             "Date",
@@ -41,6 +42,7 @@ class ColumnMapper:
 
         # Entry Time
         "entry_time": [
+            "entry_time",
             "Entry Time",
             "Open Time",
             "Time",
@@ -48,12 +50,14 @@ class ColumnMapper:
 
         # Exit Date
         "exit_date": [
+            "exit_date",
             "Exit Date",
             "Close Date",
         ],
 
         # Exit Time
         "exit_time": [
+            "exit_time",
             "Exit Time",
             "Close Time",
         ],
@@ -67,6 +71,7 @@ class ColumnMapper:
         # Side
         "side": [
             "Type",
+            "Entry Type",
             "Direction",
             "Side",
             "Trade Type",
@@ -99,6 +104,7 @@ class ColumnMapper:
         # Ticket
         "ticket": [
             "Ticket",
+            "Trade No",
             "Order",
             "Position",
         ],

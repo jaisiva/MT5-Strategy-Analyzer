@@ -3,17 +3,41 @@ lpattern_engine.py
 
 L Pattern Strategy Engine.
 
-Implements the non-overlapping L Pattern strategy.
+Implements non-overlapping L Pattern strategies.
 
-Supported patterns
+Business Rules
+--------------
 
-    Original
-    L
-    LL
-    LLL
-    LLLL
-    LLLLL
-    ALL_L
+Each pattern strategy is evaluated independently.
+
+L
+    Look for 1 consecutive losing trade.
+    Select the immediately following trade.
+    Restart scanning after the selected trade.
+
+LL
+    Look for 2 consecutive losing trades.
+    Select the immediately following trade.
+    Restart scanning after the selected trade.
+
+LLL
+    Look for 3 consecutive losing trades.
+    Select the immediately following trade.
+    Restart scanning after the selected trade.
+
+LLLL
+    Look for 4 consecutive losing trades.
+    Select the immediately following trade.
+    Restart scanning after the selected trade.
+
+LLLLL
+    Look for 5 consecutive losing trades.
+    Select the immediately following trade.
+    Restart scanning after the selected trade.
+
+ALL_L
+    Executes every individual strategy independently and
+    returns the union of all selected trades.
 
 Author:
     MT5 Strategy Analyzer
@@ -32,142 +56,179 @@ from mt5_analyzer.domain.trade import Trade
 
 
 class LPatternEngine(BaseStrategyEngine):
-    """
-    L Pattern strategy engine.
-
-    Non-overlapping implementation.
-    """
 
     def __init__(
         self,
         pattern: PatternType,
     ) -> None:
 
-        if pattern not in (
+        supported = (
             PatternType.L,
             PatternType.LL,
             PatternType.LLL,
             PatternType.LLLL,
             PatternType.LLLLL,
             PatternType.ALL_L,
-        ):
+        )
+
+        if pattern not in supported:
+
             raise ValueError(
-                f"Unsupported L Pattern: {pattern}"
+                f"Unsupported pattern: {pattern}"
             )
 
         self._pattern = pattern
 
+    # -------------------------------------------------------------
+
     def strategy_name(self) -> str:
-        """
-        Strategy name.
-        """
 
         return f"{self._pattern.value} Pattern Strategy"
 
+    # -------------------------------------------------------------
+
     def pattern_name(self) -> str:
-        """
-        Pattern name.
-        """
 
         return self._pattern.value
+
+    # -------------------------------------------------------------
 
     def select_trades(
         self,
         trades: list[Trade],
     ) -> list[Trade]:
-        """
-        Extract trades for requested L Pattern.
-        """
 
         if self._pattern is PatternType.ALL_L:
 
-            return self._extract_all_l(
+            return self._extract_all_patterns(
                 trades
             )
 
-        length = len(
+        pattern_length = len(
             self._pattern.value
         )
 
-        return self._extract_pattern(
+        return self._scan_pattern(
             trades,
-            length,
+            pattern_length,
+            self._pattern,
         )
 
-    # ------------------------------------------------------------
-    # Pattern Extraction
-    # ------------------------------------------------------------
+    # -------------------------------------------------------------
+    # Generic Scanner
+    # -------------------------------------------------------------
 
-    def _extract_pattern(
+    def _scan_pattern(
         self,
         trades: list[Trade],
-        pattern_length: int,
+        losses_required: int,
+        pattern: PatternType,
     ) -> list[Trade]:
 
         selected: list[Trade] = []
 
-        losses = 0
+        i = 0
 
-        for trade in trades:
+        n = len(trades)
 
-            if trade.is_loss:
+        while i < n:
 
-                losses += 1
+            # Need enough trades remaining
+            if i + losses_required >= n:
 
-                continue
+                break
 
-            # Winning trade
+            matched = True
 
-            if losses == pattern_length:
+            # Verify consecutive losses
+            for j in range(losses_required):
 
-                selected.append(
-                    replace(
-                        trade,
-                        pattern=self._pattern,
-                    )
-                )
+                if not trades[i + j].is_loss:
 
-            losses = 0
+                    matched = False
+                    break
 
-        return selected
+            if matched:
 
-    # ------------------------------------------------------------
-
-    def _extract_all_l(
-        self,
-        trades: list[Trade],
-    ) -> list[Trade]:
-
-        selected: list[Trade] = []
-
-        losses = 0
-
-        for trade in trades:
-
-            if trade.is_loss:
-
-                losses += 1
-
-                continue
-
-            if losses > 0:
-
-                pattern = PatternType(
-                    "L" * min(
-                        losses,
-                        5,
-                    )
-                )
+                selected_trade = trades[
+                    i + losses_required
+                ]
 
                 selected.append(
 
                     replace(
-                        trade,
+                        selected_trade,
                         pattern=pattern,
                     )
 
                 )
 
-            losses = 0
+                #
+                # Non-overlapping
+                #
+                i = i + losses_required + 1
+
+            else:
+
+                i += 1
+
+        return selected
+
+    # -------------------------------------------------------------
+
+    def _extract_all_patterns(
+        self,
+        trades: list[Trade],
+    ) -> list[Trade]:
+
+        selected: list[Trade] = []
+
+        seen: set[int] = set()
+
+        patterns = [
+
+            (1, PatternType.L),
+
+            (2, PatternType.LL),
+
+            (3, PatternType.LLL),
+
+            (4, PatternType.LLLL),
+
+            (5, PatternType.LLLLL),
+
+        ]
+
+        for losses, pattern in patterns:
+
+            matches = self._scan_pattern(
+                trades,
+                losses,
+                pattern,
+            )
+
+            for trade in matches:
+
+                #
+                # Prevent duplicate trade selection
+                #
+                if trade.ticket in seen:
+
+                    continue
+
+                seen.add(
+                    trade.ticket
+                )
+
+                selected.append(
+                    trade
+                )
+
+        #
+        # Preserve chronological order
+        #
+        selected.sort(
+            key=lambda t: t.entry_time
+        )
 
         return selected

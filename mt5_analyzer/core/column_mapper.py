@@ -161,36 +161,36 @@ class ColumnMapper:
 
         return mapping
 
-@classmethod
-def validate_columns(cls, columns: List[str]) -> None:
-    """
-    Validate required MT5 columns exist.
+    @classmethod
+    def validate_columns(cls, columns: List[str]) -> None:
+        """
+        Validate required MT5 columns exist.
 
-    Supports both:
+        Supports both:
       - Raw MT5 column names
       - Already-normalized canonical column names
-    """
+       """
 
-    mapped_columns: set[str] = set()
+        mapped_columns: set[str] = set()
 
-    # Already canonical?
-    for column in columns:
+        # Already canonical?
+        for column in columns:
 
-        if column in cls.REQUIRED_COLUMNS:
+            if column in cls.REQUIRED_COLUMNS:
 
-            mapped_columns.add(column)
+                mapped_columns.add(column)
 
-    # Map MT5 aliases
-    mapping = cls.map_columns(columns)
+        # Map MT5 aliases
+        mapping = cls.map_columns(columns)
 
-    mapped_columns.update(mapping.values())
+        mapped_columns.update(mapping.values())
 
-    # Validate required fields
-    for required in cls.REQUIRED_COLUMNS:
+        # Validate required fields
+        for required in cls.REQUIRED_COLUMNS:
 
-        if required not in mapped_columns:
+            if required not in mapped_columns:
 
-            raise MissingColumnError(required)
+                raise MissingColumnError(required)
     
     @classmethod
     def rename_mapping(cls, columns: List[str]) -> Dict[str, str]:

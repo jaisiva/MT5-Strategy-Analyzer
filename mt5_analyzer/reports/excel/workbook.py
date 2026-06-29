@@ -9,8 +9,11 @@ Responsibilities
 ----------------
 - Create workbook
 - Add/remove worksheets
+- Get worksheet
+- Activate worksheet
 - Freeze panes
 - Auto-fit columns
+- Set worksheet zoom
 - Save workbook
 
 Author:
@@ -51,18 +54,58 @@ class ExcelWorkbook:
     ) -> Worksheet:
         """
         Create a worksheet.
-
-        Parameters
-        ----------
-        title
-            Worksheet title.
-
-        Returns
-        -------
-        Worksheet
         """
 
-        return self.workbook.create_sheet(title=title)
+        return self.workbook.create_sheet(
+            title=title,
+        )
+
+    # -----------------------------------------------------------------
+
+    def get_sheet(
+        self,
+        title: str,
+    ) -> Worksheet:
+        """
+        Return worksheet by title.
+        """
+
+        if title not in self.workbook.sheetnames:
+
+            raise KeyError(
+                f"Worksheet '{title}' does not exist."
+            )
+
+        return self.workbook[title]
+
+    # -----------------------------------------------------------------
+
+    def activate_sheet(
+        self,
+        sheet: str | Worksheet,
+    ) -> Worksheet:
+        """
+        Activate worksheet.
+        """
+
+        if isinstance(
+            sheet,
+            Worksheet,
+        ):
+
+            worksheet = sheet
+
+        else:
+
+            worksheet = self.get_sheet(
+                sheet,
+            )
+
+        self.workbook.active = self.workbook.index(
+            worksheet,
+        )
+
+        return worksheet
 
     # -----------------------------------------------------------------
 
@@ -76,9 +119,9 @@ class ExcelWorkbook:
 
         if title in self.workbook.sheetnames:
 
-            sheet = self.workbook[title]
-
-            self.workbook.remove(sheet)
+            self.workbook.remove(
+                self.workbook[title]
+            )
 
     # -----------------------------------------------------------------
 
@@ -117,7 +160,9 @@ class ExcelWorkbook:
 
                 try:
 
-                    value = str(cell.value)
+                    value = str(
+                        cell.value
+                    )
 
                 except Exception:
 
@@ -131,12 +176,27 @@ class ExcelWorkbook:
             sheet.column_dimensions[
                 letter
             ].width = max(
+
                 min_width,
+
                 min(
                     length + 2,
                     max_width,
                 ),
             )
+
+    # -----------------------------------------------------------------
+
+    def set_zoom(
+        self,
+        sheet: Worksheet,
+        zoom: int = 100,
+    ) -> None:
+        """
+        Set worksheet zoom level.
+        """
+
+        sheet.sheet_view.zoomScale = zoom
 
     # -----------------------------------------------------------------
 
@@ -170,32 +230,29 @@ class ExcelWorkbook:
     ) -> Path:
         """
         Save workbook.
-
-        Parameters
-        ----------
-        filename
-            Output file.
-
-        Returns
-        -------
-        Path
         """
 
-        path = Path(filename)
+        path = Path(
+            filename
+        )
 
         path.parent.mkdir(
             parents=True,
             exist_ok=True,
         )
 
-        self.workbook.save(path)
+        self.workbook.save(
+            path
+        )
 
         return path
 
     # -----------------------------------------------------------------
 
     @property
-    def sheet_names(self) -> list[str]:
+    def sheet_names(
+        self,
+    ) -> list[str]:
         """
         Workbook sheet names.
         """
@@ -204,7 +261,9 @@ class ExcelWorkbook:
 
     # -----------------------------------------------------------------
 
-    def __len__(self) -> int:
+    def __len__(
+        self,
+    ) -> int:
         """
         Number of worksheets.
         """

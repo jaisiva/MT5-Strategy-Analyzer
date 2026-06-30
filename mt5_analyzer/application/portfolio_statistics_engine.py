@@ -83,6 +83,24 @@ class PortfolioStatisticsEngine:
       results.
     """
 
+	# ---------------------------------------------------------
+	# Public API
+	# ---------------------------------------------------------
+
+	def build_portfolio_trades(
+    	self,
+    	strategy_results: list[StrategyResult],
+	) -> list[PortfolioTrade]:
+    	"""
+    	Build consolidated portfolio trades.
+
+	    Public wrapper around the internal implementation.
+    	"""
+
+    	return self._build_portfolio_trades(
+        	strategy_results
+    	)
+	
     # ---------------------------------------------------------
     # Public API
     # ---------------------------------------------------------

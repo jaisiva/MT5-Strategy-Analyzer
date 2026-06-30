@@ -3,31 +3,13 @@ portfolio_engine.py
 
 Portfolio Analysis Engine.
 
-This engine executes one or more trading strategies and
-consolidates their results into a PortfolioResult.
+Executes one or more trading strategies and consolidates
+their results into a PortfolioResult.
 
-The Portfolio Engine DOES NOT perform any portfolio
-calculations.
+The PortfolioEngine performs NO business calculations.
 
-All calculations are delegated to
+All portfolio calculations are delegated to
 PortfolioStatisticsEngine.
-
-Responsibilities
-----------------
-
-• Execute selected strategies
-
-• Collect StrategyResult objects
-
-• Build PortfolioResult
-
-• Invoke PortfolioStatisticsEngine
-
-• Calculate monthly statistics
-
-• Calculate yearly statistics
-
-• Return PortfolioResult
 
 Author
 ------
@@ -42,21 +24,20 @@ from __future__ import annotations
 
 from typing import Callable
 
-from mt5_analyzer.application.drawdown_engine import (
-    DrawdownEngine,
+from mt5_analyzer.application.original_engine import (
+    OriginalStrategyEngine,
 )
 from mt5_analyzer.application.lpattern_engine import (
     LPatternEngine,
 )
-from mt5_analyzer.application.original_engine import (
-    OriginalStrategyEngine,
+from mt5_analyzer.application.drawdown.drawdown_engine import (
+    DrawdownEngine,
 )
 from mt5_analyzer.application.portfolio_statistics_engine import (
     PortfolioStatisticsEngine,
 )
 
 from mt5_analyzer.domain.enums import (
-    DrawdownType,
     PatternType,
     StrategyType,
 )
@@ -82,8 +63,8 @@ class PortfolioEngine:
     """
     Portfolio Analysis Engine.
 
-    Executes selected strategies and consolidates
-    results into a PortfolioResult.
+    Executes multiple independent strategies and
+    consolidates them into a single PortfolioResult.
     """
 
     # ---------------------------------------------------------
@@ -106,7 +87,9 @@ class PortfolioEngine:
 
     def run(
         self,
+        *,
         trades: list[Trade],
+        timeframe: str,
         selected_strategies: list[str],
         portfolio_inputs: dict[
             str,
@@ -119,75 +102,55 @@ class PortfolioEngine:
         Parameters
         ----------
         trades
-
             Original MT5 trades.
 
-        selected_strategies
+        timeframe
+            Report timeframe.
 
-            Strategy names selected by user.
+        selected_strategies
+            Strategies selected by user.
 
         portfolio_inputs
-
-            Strategy configuration.
+            Per-strategy configuration.
 
         Returns
         -------
         PortfolioResult
         """
 
-        strategy_results = (
-            self._execute_strategies(
-                trades,
-                selected_strategies,
-            )
+        strategy_results = self._execute_strategies(
+
+            trades=trades,
+
+            timeframe=timeframe,
+
+            selected_strategies=selected_strategies,
+
+            portfolio_inputs=portfolio_inputs,
+
         )
 
-        statistics = (
-            self._statistics_engine.calculate(
-                strategy_results,
-                portfolio_inputs,
-            )
+        statistics = self._statistics_engine.calculate(
+
+            strategy_results,
+
+            portfolio_inputs,
+
         )
 
-        portfolio_result = PortfolioResult()
+        result = PortfolioResult()
 
-        portfolio_result.strategy_results = (
-            strategy_results
-        )
+        result.strategy_results = strategy_results
 
-        portfolio_result.statistics = (
-            statistics
-        )
-
-        #
-        # Monthly / Yearly statistics
-        # are calculated after the
-        # PortfolioTrade collection
-        # is built.
-        #
+        result.statistics = statistics
 
         return self._complete_result(
-            portfolio_result,
+
+            result,
+
             portfolio_inputs,
+
         )
-
-    # ---------------------------------------------------------
-    # Engine Registry
-    # ---------------------------------------------------------
-
-    def _create_engine_factory(
-        self,
-    ) -> dict[
-        str,
-        Callable[[], object],
-    ]:
-        """
-        Create strategy registry.
-
-        Implemented in Part-2.
-        """
-
-        return {}
 
     # ---------------------------------------------------------
     # Strategy Registry
@@ -195,22 +158,15 @@ class PortfolioEngine:
 
     def _create_engine_factory(
         self,
-    ) -> dict[
-        str,
-        Callable[[], object],
-    ]:
+    ) -> dict[str, Callable[[], object]]:
         """
-        Create strategy factory.
-
-        Returns
-        -------
-        Dictionary of strategy factories.
+        Create strategy engine factory.
         """
 
         return {
 
             #
-            # Original Strategy
+            # Original
             #
             StrategyType.ORIGINAL.value:
 
@@ -258,35 +214,25 @@ class PortfolioEngine:
             #
             # Drawdown Strategies
             #
-            DrawdownType.DD10.value:
+            "DD10":
 
-                lambda: DrawdownEngine(
-                    DrawdownType.DD10
-                ),
+                lambda: DrawdownEngine(10),
 
-            DrawdownType.DD15.value:
+            "DD15":
 
-                lambda: DrawdownEngine(
-                    DrawdownType.DD15
-                ),
+                lambda: DrawdownEngine(15),
 
-            DrawdownType.DD20.value:
+            "DD20":
 
-                lambda: DrawdownEngine(
-                    DrawdownType.DD20
-                ),
+                lambda: DrawdownEngine(20),
 
-            DrawdownType.DD25.value:
+            "DD25":
 
-                lambda: DrawdownEngine(
-                    DrawdownType.DD25
-                ),
+                lambda: DrawdownEngine(25),
 
-            DrawdownType.DD30.value:
+            "DD30":
 
-                lambda: DrawdownEngine(
-                    DrawdownType.DD30
-                ),
+                lambda: DrawdownEngine(30),
 
         }
 
@@ -296,23 +242,17 @@ class PortfolioEngine:
 
     def _execute_strategies(
         self,
+        *,
         trades: list[Trade],
+        timeframe: str,
         selected_strategies: list[str],
+        portfolio_inputs: dict[
+            str,
+            PortfolioInput,
+        ],
     ) -> list[StrategyResult]:
         """
-        Execute selected strategies.
-
-        Parameters
-        ----------
-        trades
-            Original MT5 trades.
-
-        selected_strategies
-            User selected strategies.
-
-        Returns
-        -------
-        list[StrategyResult]
+        Execute all selected strategies.
         """
 
         results: list[StrategyResult] = []
@@ -323,8 +263,28 @@ class PortfolioEngine:
                 strategy_name
             )
 
+            config = portfolio_inputs.get(
+                strategy_name
+            )
+
+            if config is None:
+
+                raise ValueError(
+
+                    f"Missing PortfolioInput for "
+
+                    f"'{strategy_name}'."
+
+                )
+
             result = engine.run(
-                trades
+
+                trades=trades,
+
+                timeframe=timeframe,
+
+                margin_per_trade=config.margin_per_trade,
+
             )
 
             results.append(
@@ -351,7 +311,9 @@ class PortfolioEngine:
 
             raise ValueError(
 
-                f"Unknown strategy: {strategy_name}"
+                f"Unknown strategy: "
+
+                f"{strategy_name}"
 
             )
 
@@ -363,13 +325,11 @@ class PortfolioEngine:
         self,
     ) -> list[str]:
         """
-        Return available strategies.
+        Return supported strategy names.
         """
 
         return sorted(
-
             self._engine_factory.keys()
-
         )
 
     # ---------------------------------------------------------
@@ -378,7 +338,7 @@ class PortfolioEngine:
 
     def _complete_result(
         self,
-        portfolio_result: PortfolioResult,
+        result: PortfolioResult,
         portfolio_inputs: dict[
             str,
             PortfolioInput,
@@ -389,9 +349,9 @@ class PortfolioEngine:
 
         Calculates
 
-        • Portfolio trades
-        • Monthly statistics
-        • Yearly statistics
+        • Portfolio Trades
+        • Monthly Statistics
+        • Yearly Statistics
 
         Returns
         -------
@@ -399,23 +359,25 @@ class PortfolioEngine:
         """
 
         #
-        # Build portfolio trades.
+        # Build portfolio trade list.
+        #
+        # NOTE:
+        # If PortfolioStatisticsEngine exposes a public
+        # build_portfolio_trades() method, use that.
         #
         portfolio_trades = (
             self._statistics_engine
-            ._build_portfolio_trades(
-                portfolio_result.strategy_results
+            .build_portfolio_trades(
+                result.strategy_results
             )
         )
 
-        portfolio_result.portfolio_trades = (
-            portfolio_trades
-        )
+        result.portfolio_trades = portfolio_trades
 
         #
-        # Monthly statistics.
+        # Monthly statistics
         #
-        monthly = (
+        monthly_statistics = (
             self._statistics_engine
             .calculate_monthly_statistics(
                 portfolio_trades,
@@ -423,19 +385,23 @@ class PortfolioEngine:
         )
 
         self._statistics_engine.complete_monthly_statistics(
-            monthly,
-            portfolio_result.strategy_results,
+
+            monthly_statistics,
+
+            result.strategy_results,
+
             portfolio_inputs,
+
         )
 
-        portfolio_result.monthly_statistics = (
-            monthly
+        result.monthly_statistics = (
+            monthly_statistics
         )
 
         #
-        # Yearly statistics.
+        # Yearly statistics
         #
-        yearly = (
+        yearly_statistics = (
             self._statistics_engine
             .calculate_yearly_statistics(
                 portfolio_trades,
@@ -443,58 +409,161 @@ class PortfolioEngine:
         )
 
         self._statistics_engine.complete_yearly_statistics(
-            yearly,
-            portfolio_result.strategy_results,
+
+            yearly_statistics,
+
+            result.strategy_results,
+
             portfolio_inputs,
+
         )
 
-        portfolio_result.yearly_statistics = (
-            yearly
+        result.yearly_statistics = (
+            yearly_statistics
         )
 
         #
-        # Final validation.
+        # Validate portfolio statistics.
         #
         self._statistics_engine.validate(
-            portfolio_result.statistics
+            result.statistics
         )
 
-        return portfolio_result
+        return result
 
     # ---------------------------------------------------------
+    # Convenience Methods
+    # ---------------------------------------------------------
 
+    @staticmethod
     def portfolio_summary(
-        self,
-        portfolio_result: PortfolioResult,
+        result: PortfolioResult,
     ):
         """
-        Convenience method.
-
-        Returns portfolio statistics.
+        Return PortfolioStatistics.
         """
 
-        return portfolio_result.statistics
+        return result.statistics
 
     # ---------------------------------------------------------
 
+    @staticmethod
     def strategy_results(
-        self,
-        portfolio_result: PortfolioResult,
+        result: PortfolioResult,
     ) -> list[StrategyResult]:
         """
-        Return individual strategy results.
+        Return StrategyResults.
         """
 
-        return portfolio_result.strategy_results
+        return result.strategy_results
 
     # ---------------------------------------------------------
 
+    @staticmethod
     def portfolio_trades(
-        self,
-        portfolio_result: PortfolioResult,
+        result: PortfolioResult,
     ):
         """
-        Return portfolio trades.
+        Return PortfolioTrade list.
         """
 
-        return portfolio_result.portfolio_trades
+        return result.portfolio_trades
+		
+    # ---------------------------------------------------------
+    # Validation
+    # ---------------------------------------------------------
+
+    def validate_inputs(
+        self,
+        selected_strategies: list[str],
+        portfolio_inputs: dict[str, PortfolioInput],
+    ) -> None:
+        """
+        Validate portfolio configuration.
+        """
+
+        if not selected_strategies:
+
+            raise ValueError(
+                "At least one strategy must be selected."
+            )
+
+        for strategy_name in selected_strategies:
+
+            if strategy_name not in self._engine_factory:
+
+                raise ValueError(
+                    f"Unsupported strategy: {strategy_name}"
+                )
+
+            if strategy_name not in portfolio_inputs:
+
+                raise ValueError(
+                    f"Missing PortfolioInput for "
+                    f"'{strategy_name}'."
+                )
+
+            config = portfolio_inputs[strategy_name]
+
+            if config.margin_per_trade <= 0:
+
+                raise ValueError(
+                    f"Invalid margin_per_trade for "
+                    f"'{strategy_name}'."
+                )
+
+            if config.lot_size <= 0:
+
+                raise ValueError(
+                    f"Invalid lot_size for "
+                    f"'{strategy_name}'."
+                )
+
+    # ---------------------------------------------------------
+
+    @staticmethod
+    def supported_strategies() -> list[str]:
+        """
+        Return all supported strategy names.
+
+        This helper is useful for CLI validation.
+        """
+
+        return [
+
+            StrategyType.ORIGINAL.value,
+
+            PatternType.L.value,
+
+            PatternType.LL.value,
+
+            PatternType.LLL.value,
+
+            PatternType.LLLL.value,
+
+            PatternType.LLLLL.value,
+
+            PatternType.ALL_L.value,
+
+            "DD10",
+
+            "DD15",
+
+            "DD20",
+
+            "DD25",
+
+            "DD30",
+
+        ]
+
+    # ---------------------------------------------------------
+
+    def __repr__(self) -> str:
+
+        return (
+            f"{self.__class__.__name__}"
+            "("
+            f"strategies={len(self._engine_factory)}"
+            ")"
+        )

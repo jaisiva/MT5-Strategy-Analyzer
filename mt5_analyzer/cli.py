@@ -15,9 +15,17 @@ from __future__ import annotations
 import argparse
 import sys
 
-from mt5_analyzer.domain.enums import PatternType
-from mt5_analyzer.services.analysis_service import AnalysisService
+from mt5_analyzer.domain.enums import (
+    PatternType,
+)
 
+from mt5_analyzer.domain.portfolio_input import (
+    PortfolioInput,
+)
+
+from mt5_analyzer.services.analysis_service import (
+    AnalysisService,
+)
 
 def build_parser() -> argparse.ArgumentParser:
     """
@@ -128,8 +136,77 @@ def build_parser() -> argparse.ArgumentParser:
         type=float,
     )
 
-    return parser
+    # ---------------------------------------------------------
+# Portfolio Strategy
+# ---------------------------------------------------------
 
+    portfolio = subparsers.add_parser(
+        "portfolio",
+        help="Generate Portfolio report",
+    )
+
+    portfolio.add_argument(
+        "--input",
+        required=True,
+    )
+
+    portfolio.add_argument(
+        "--output",
+        required=True,
+    )
+
+    portfolio.add_argument(
+        "--timeframe",
+        default="H1",
+    )
+
+    portfolio.add_argument(
+        "--strategies",
+        required=True,
+        help="Comma separated strategy list",
+    )
+
+    portfolio.add_argument(
+        "--margin",
+        action="append",
+        default=[],
+        metavar="STRATEGY=MARGIN",
+    )
+
+    portfolio.add_argument(
+        "--lot",
+        action="append",
+        default=[],
+        metavar="STRATEGY=LOT",
+    )  
+
+    def _build_portfolio_inputs(
+        strategies: list[str],
+        margins: list[str],
+        lots: list[str],
+    ) -> dict[str, PortfolioInput]:
+
+    margin_map = {}
+
+    for item in margins:
+        strategy, value = item.split("=")
+        margin_map[strategy] = float(value)
+        lot_map = {}
+
+    for item in lots:
+        strategy, value = item.split("=")
+        lot_map[strategy] = float(value)
+        portfolio_inputs = {}
+
+    for strategy in strategies:
+        portfolio_inputs[strategy] = PortfolioInput(
+            strategy=strategy,
+            lot_size=lot_map[strategy],
+            margin_per_trade=margin_map[strategy],
+        )
+    return portfolio_inputs
+        
+    return parser
 
 # ---------------------------------------------------------------------
 

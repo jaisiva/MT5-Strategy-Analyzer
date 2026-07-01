@@ -216,31 +216,22 @@ class AnalysisService:
         """
 
         loaded = self.loader.load(
-        input_file,
+            input_file,
         )
 
-        engine = self.PortfolioEngine()
-    
-        writer = self.PortfolioReportWriter()
+        engine = self.portfolio_engine  
+        writer = self.portfolio_writer
 
         result = engine.run(
-
             trades=loaded.trades,
-
             timeframe=timeframe,
-
             selected_strategies=selected_strategies,
-
             portfolio_inputs=portfolio_inputs,
-
         )
 
         writer.write(
-
             result,
-
             output_file,
-
         )
 
         return result

@@ -186,7 +186,7 @@ def build_parser() -> argparse.ArgumentParser:
         lots: list[str],
     ) -> dict[str, PortfolioInput]:
 
-    margin_map = {}
+        margin_map = {}
 
     for item in margins:
         strategy, value = item.split("=")
@@ -204,9 +204,9 @@ def build_parser() -> argparse.ArgumentParser:
             lot_size=lot_map[strategy],
             margin_per_trade=margin_map[strategy],
         )
-    return portfolio_inputs
+        return portfolio_inputs
         
-    return parser
+        return parser
 
 # ---------------------------------------------------------------------
 

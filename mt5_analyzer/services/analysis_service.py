@@ -22,7 +22,7 @@ from mt5_analyzer.core.loader import MT5Loader
 from mt5_analyzer.application.original_engine import OriginalStrategyEngine
 from mt5_analyzer.application.lpattern_engine import LPatternEngine
 from mt5_analyzer.application.drawdown.drawdown_engine import DrawdownEngine
-from mt5_analyzer.application.portfolio.portfolio_engine import PortfolioEngine
+from mt5_analyzer.application.portfolio_engine import PortfolioEngine
 
 from mt5_analyzer.reports.excel.original_writer import OriginalReportWriter
 from mt5_analyzer.reports.excel.lpattern_writer import LPatternReportWriter
@@ -31,6 +31,7 @@ from mt5_analyzer.reports.excel.portfolio_writer import PortfolioReportWriter
 
 from mt5_analyzer.domain.strategy_result import StrategyResult
 from mt5_analyzer.domain.portfolio_result import PortfolioResult
+from mt5_analyzer.domain.portfolio_input import PortfolioInput
 
 
 class AnalysisService:
@@ -195,6 +196,49 @@ class AnalysisService:
         writer.write(
             result,
             output_file,
+        )
+
+        return result
+
+    def _run_portfolio(
+        self,
+        *,
+        input_file: str | Path,
+        output_file: str | Path,
+        timeframe: str,
+        selected_strategies: list[str],
+        portfolio_inputs: dict[str, PortfolioInput],
+    ) -> PortfolioResult:
+        """
+        Common workflow used by Portfolio reports.
+        """
+
+        loaded = self.loader.load(
+        input_file,
+        )
+
+        engine = PortfolioEngine()
+    
+        writer = PortfolioReportWriter()
+
+        result = engine.run(
+
+        trades=loaded.trades,
+
+        timeframe=timeframe,
+
+        selected_strategies=selected_strategies,
+
+        portfolio_inputs=portfolio_inputs,
+
+        )
+
+        writer.write(
+
+            result,
+
+            output_file,
+
         )
 
         return result

@@ -141,35 +141,23 @@ class AnalysisService:
     def generate_portfolio_report(
         self,
         *,
-        portfolio_name: str,
-        strategies: list[StrategyResult],
+        input_file: str | Path,
         output_file: str | Path,
-        description: str = "",
+        timeframe: str,
+        selected_strategies: list[str],
+        portfolio_inputs: dict[str, PortfolioInput],
     ) -> PortfolioResult:
         """
-        Generate portfolio report.
+        Generate Portfolio report.
         """
 
-        engine = PortfolioEngine()
-
-        writer = PortfolioReportWriter()
-
-        result = engine.build(
-
-            portfolio_name=portfolio_name,
-
-            strategies=strategies,
-
-            description=description,
-
-        )
-
-        writer.write(
-            result,
-            output_file,
-        )
-
-        return result
+        return self._run_portfolio(
+        input_file=input_file,
+        output_file=output_file,
+        timeframe=timeframe,
+        selected_strategies=selected_strategies,
+        portfolio_inputs=portfolio_inputs,
+    )
 
     # -----------------------------------------------------------------
 

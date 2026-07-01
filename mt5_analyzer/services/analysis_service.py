@@ -54,6 +54,8 @@ class AnalysisService:
     def __init__(self) -> None:
 
         self.loader = MT5Loader()
+        self.portfolio_engine = PortfolioEngine()
+        self.portfolio_writer = PortfolioReportWriter()
 
     # -----------------------------------------------------------------
 
@@ -217,19 +219,19 @@ class AnalysisService:
         input_file,
         )
 
-        engine = PortfolioEngine()
+        engine = self.PortfolioEngine()
     
-        writer = PortfolioReportWriter()
+        writer = self.PortfolioReportWriter()
 
         result = engine.run(
 
-        trades=loaded.trades,
+            trades=loaded.trades,
 
-        timeframe=timeframe,
+            timeframe=timeframe,
 
-        selected_strategies=selected_strategies,
+            selected_strategies=selected_strategies,
 
-        portfolio_inputs=portfolio_inputs,
+            portfolio_inputs=portfolio_inputs,
 
         )
 
